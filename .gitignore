@@ -1,0 +1,23 @@
+# Dependency directories
+node_modules/
+
+# Log files
+logs/
+*.log
+
+# Environment variables file
+.env
+
+# User-specific files
+.DS_Store
+Thumbs.db
+
+# IDE and editor-specific files
+.idea/
+.vscode/
+
+# Compiled output
+dist/
+
+# Configuration files
+config/*.js
