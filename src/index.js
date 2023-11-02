@@ -44,10 +44,10 @@ function getAllConnectedClients(roomId) {
 }
 
 io.on("connection", (socket) => {
-  console.log("a user connected", socket.id);
+  // console.log("a user connected", socket.id);
 
   socket.on(ACTIONS.JOIN, ({ roomId, username }) => {
-    console.log("user joined", username, roomId);
+    //   console.log("user joined", username, roomId);
     userSocketMap[socket.id] = username;
     socket.join(roomId);
     const clients = getAllConnectedClients(roomId);
