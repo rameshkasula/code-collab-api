@@ -6,6 +6,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
 import { Server } from "socket.io";
+import ACTIONS from "./Actions.js";
 
 // dotenv
 dotenv.config();
@@ -29,12 +30,54 @@ const io = new Server(server, {
   },
 });
 
+const userSocketMap = {};
+function getAllConnectedClients(roomId) {
+  // Map
+  return Array.from(io.sockets.adapter.rooms.get(roomId) || []).map(
+    (socketId) => {
+      return {
+        socketId,
+        username: userSocketMap[socketId],
+      };
+    }
+  );
+}
+
 io.on("connection", (socket) => {
   console.log("a user connected", socket.id);
 
-  socket.on("joinRoom", (data) => {
-    socket.join(data);
-    console.log("user joined room", data);
+  socket.on(ACTIONS.JOIN, ({ roomId, username }) => {
+    console.log("user joined", username, roomId);
+    userSocketMap[socket.id] = username;
+    socket.join(roomId);
+    const clients = getAllConnectedClients(roomId);
+    clients.forEach(({ socketId }) => {
+      io.to(socketId).emit(ACTIONS.JOINED, {
+        clients,
+        username,
+        socketId: socket.id,
+      });
+    });
+  });
+
+  socket.on(ACTIONS.CODE_CHANGE, ({ roomId, code }) => {
+    socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code });
+  });
+
+  socket.on(ACTIONS.SYNC_CODE, ({ socketId, code }) => {
+    io.to(socketId).emit(ACTIONS.CODE_CHANGE, { code });
+  });
+
+  socket.on("disconnecting", () => {
+    const rooms = [...socket.rooms];
+    rooms.forEach((roomId) => {
+      socket.in(roomId).emit(ACTIONS.DISCONNECTED, {
+        socketId: socket.id,
+        username: userSocketMap[socket.id],
+      });
+    });
+    delete userSocketMap[socket.id];
+    socket.leave();
   });
 });
 
